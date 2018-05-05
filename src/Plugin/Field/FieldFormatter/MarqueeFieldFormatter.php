@@ -13,9 +13,11 @@ use Drupal\Core\Form\FormStateInterface;
  *
  * @FieldFormatter(
  *   id = "marquee_field_formatter",
- *   label = @Translation("Marquee field formatter"),
+ *   label = @Translation("Marquee"),
  *   field_types = {
  *     "text",
+ *     "text_long",
+ *     "text_with_summary",
  *     "string",
  *     "string_long",
  *   }
@@ -26,10 +28,41 @@ class MarqueeFieldFormatter extends FormatterBase {
   /**
    * {@inheritdoc}
    */
+  public static function defaultSettings() {
+    return [
+      // Declare a setting named 'text_length', with
+      // a default value of 'short'
+      'direction' => 'left',
+    ] + parent::defaultSettings();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function settingsForm(array $form, FormStateInterface $form_state) {
+    $element['direction'] = [
+      '#title' => $this->t('Direction'),
+      '#type' => 'select',
+      '#options' => [
+        'left' => $this->t('left'),
+        'up' => $this->t('up'),
+        'right' => $this->t('right'),
+        'down' => $this->t('down'),
+      ],
+      '#default_value' => $this->getSetting('direction'),
+    ];
+
+    return $element;
+  }
+
+
+  /**
+   * {@inheritdoc}
+   */
   public function settingsSummary() {
     $summary = [];
     // Implement settings summary.
-    $summary[] = $this->t('Formats the string as a scrolling marquee!');
+    $summary[] = $this->t('<marquee>Formats the string as a scrolling marquee!</marquee>');
     return $summary;
   }
 
@@ -39,12 +72,13 @@ class MarqueeFieldFormatter extends FormatterBase {
   public function viewElements(FieldItemListInterface $items, $langcode) {
     $elements = [];
 
+    $direction = $this->getSetting('direction');
     foreach ($items as $delta => $item) {
       // The text value has no text format assigned to it, so the user input
       // should equal the output, including newlines.
       $elements[$delta] = [
         '#type' => 'inline_template',
-        '#template' => '<marquee>{{ value|nl2br }}</marquee>',
+        '#template' => '<marquee direction=' . $direction . '>{{ value|nl2br }}</marquee>',
         '#context' => ['value' => $item->value],
       ];
     }
